@@ -13,9 +13,13 @@ const DEFAULT_SKIP = new Set([
 ]);
 
 function buildSkipSet() {
+  const skip = new Set(DEFAULT_SKIP);
   const env = process.env.CLAUDE_MEM_SKIP_TOOLS;
-  if (!env) return DEFAULT_SKIP;
-  return new Set(env.split(',').map(s => s.trim()).filter(Boolean));
+  if (!env) return skip;
+  for (const name of env.split(',').map(s => s.trim()).filter(Boolean)) {
+    skip.add(name);
+  }
+  return skip;
 }
 
 async function main() {

@@ -108,18 +108,19 @@ async function main() {
     body: JSON.stringify({ contentSessionId: sessionId, project: cwd }),
   }, 5000);
 
-  // 3. Fetch context to inject
-  const ctxRes = await tryFetch(`${BASE}/api/context/inject`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ contentSessionId: sessionId, project: cwd }),
-  }, 10000);
+  // 3. Fetch context to inject (GET with query params — endpoint returns plain text)
+  const injectUrl = `${BASE}/api/context/inject?project=${encodeURIComponent(cwd)}&contentSessionId=${encodeURIComponent(sessionId)}`;
+  const ctxRes = await tryFetch(injectUrl, {}, 10000);
 
   if (ctxRes?.ok) {
-    const data = await ctxRes.json().catch(() => null);
-    const context = data?.context || data?.content || data?.output || '';
+    const text = await ctxRes.text().catch(() => '');
+    let context = text;
+    try {
+      const data = JSON.parse(text);
+      context = data?.context || data?.content || data?.output || text;
+    } catch { /* plain text response — use as-is */ }
     if (context && context.trim()) {
-      process.stdout.write(JSON.stringify({ hookSpecificOutput: context }) + '\n');
+      process.stdout.write(JSON.stringify({ hookSpecificOutput: context.trim() }) + '\n');
       process.exit(0);
     }
   }
