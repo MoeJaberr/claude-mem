@@ -116,10 +116,16 @@ async function main() {
   }, 10000);
 
   if (ctxRes?.ok) {
-    const data = await ctxRes.json().catch(() => null);
-    const context = data?.context || data?.content || data?.output || '';
+    let context = '';
+    const text = await ctxRes.text().catch(() => '');
+    try {
+      const data = JSON.parse(text);
+      context = data?.context || data?.content || data?.output || '';
+    } catch {
+      context = text;
+    }
     if (context && context.trim()) {
-      process.stdout.write(JSON.stringify({ hookSpecificOutput: context }) + '\n');
+      process.stdout.write(JSON.stringify({ hookSpecificOutput: context.trim() }) + '\n');
       process.exit(0);
     }
   }
